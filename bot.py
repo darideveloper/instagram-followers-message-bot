@@ -33,11 +33,17 @@ class Bot (WebScraping):
             "login_form": '#loginForm',
             "followers": '.x7r02ix.xf1ldfh.x131esax ._aano > div:first-child .xt0psk2 > .xt0psk2 > a',
             "followers_wrapper": '[role="dialog"] ._aano',
+            'message_btn': '.x9f619 > [role="button"]',
+            "message_textarea": '[role="textbox"]',
+            "message_submit": '[tabindex="-1"] [role="button"]:nth-child(3)',
         }        
 
         # Login and get followrs
         self.__login_cookies__ ()
         followers = self.__get_followers__ ()
+        
+        # Errors control variables
+        self.error = ""
         
         # Save all followers in database, first time
         if self.db.new_database:
@@ -52,20 +58,20 @@ class Bot (WebScraping):
             current_followers = self.db.get_current_followers ()
             new_followers = list(filter(lambda follower: follower not in current_followers, followers))
             
-            if not new_followers:
+            # Detect and save new followers
+            if new_followers:
+                print (f"{len(new_followers)} new followers detected:")
+                for follower in new_followers:
+                    print (follower)
+                    self.db.add_message (follower)
+            else:                    
                 print ("No new followers detected")
-                quit ()
-            
-            print (f"{len(new_followers)} new followers detected:")
-            for follower in new_followers:
-                print (follower)
-                self.db.add_message (follower)
                 
             # Count messages
             print (f"\nMessages per day: {MESSAGES_PER_DAY}")
             
             messages_sent_today = self.db.count_messages_sent_today ()
-            print (f"Messages sent today: {messages_sent_today}")
+            print (f"Messages sent today: {messages_sent_today}")            
             
             messages_to_send_num = MESSAGES_PER_DAY - messages_sent_today
             if messages_to_send_num <= 0:
@@ -78,13 +84,20 @@ class Bot (WebScraping):
             # send message to follower
             messages_to_send =self.db.get_messages_to_send ()
             for message in messages_to_send[:messages_to_send_num]:
-                                
-                # TODO: submit message
-                print (f"Sending message to {message[0]}...")
-                print ("\tSent")
                 
-                # Update database
-                self.db.update_message (message[0], message_text, sent=1)
+                user = message[0]
+                                
+                # submit message
+                print (f"Sending message to {user}...")
+                message_sent = self.__send_message__ (user, message_text)
+                
+                # Show and update database
+                if message_sent:
+                    self.db.update_message (user, message_text, sent=1)
+                    print ("\tMessage sent")
+                else:
+                    self.db.update_message (user, f" {self.error}", sent=3)
+                    print (f"\t{self.error}")
                 
                 # Wait
                 print (f"Waiting {WAIT_TIME} minutes...")
@@ -166,7 +179,52 @@ class Bot (WebScraping):
                 self.driver.execute_script(f"arguments[0].scrollBy (0, {2000});", scroll_elem[0])
         
         return links_found
+    
+    def __send_message__ (self, user:str, message:str) -> bool:
+        """ Send message to user, and update "error" if something goes wrong
+
+        Args:
+            user (str): instagram profile link
+            message (str): message to send
+            
+        Returns:
+            bool: True if message was sent, False otherwise
+        """
+                
+        # Go to target profile
+        self.set_page (user)
+        sleep (5)
+        self.refresh_selenium ()
+
+        # Validate if there is a message button
+        message_btn_text = self.get_text (self.selectors["message_btn"])
+        if not message_btn_text or message_btn_text.strip().lower() != "message":
+            self.error = "error reading profile page: message button not found"
+            return False
+                
+        # Go to message page
+        try:
+            self.click_js (self.selectors["message_btn"])
+            sleep (8)
+            self.refresh_selenium ()
+        except Exception as e:
+            self.error = f"error clicking message button: {e}"
+            return False
         
+        # Write and submit message
+        try:
+            self.send_data (self.selectors["message_textarea"], message)
+            self.refresh_selenium ()
+            self.click_js (self.selectors["message_submit"])
+            sleep (3)
+        except Exception as e:
+            self.error = f"error sending message: {e}"
+            return False
+        
+        # Return default status
+        return True
+            
+                
 if __name__ == "__main__":
     # Test bot
     Bot ()

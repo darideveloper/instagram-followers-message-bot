@@ -17,6 +17,7 @@ print ("Sent values:")
 print ("0. Message ready to send")
 print ("1. Message sent")
 print ("2. Initial follower")
+print ("3. Error sending message")
 
 print ("\nuser, date, message, sent")
 
