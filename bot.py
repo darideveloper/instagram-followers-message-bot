@@ -10,7 +10,7 @@ from datetime import datetime
 load_dotenv ()
 CURRENT_FOLDER = os.path.dirname(os.path.abspath(__file__))
 MESSAGES_PER_DAY = int(os.getenv ("MESSAGES_PER_DAY"))
-
+WAIT_TIME = int(os.getenv ("WAIT_TIME"))
 
 class Bot (WebScraping):
     
@@ -49,8 +49,7 @@ class Bot (WebScraping):
                 
         else:
             # Detect new followers and save in database
-            current_messages = self.db.get_messages ()
-            current_followers = list(map(lambda message: message[0], current_messages))
+            current_followers = self.db.get_current_followers ()
             new_followers = list(filter(lambda follower: follower not in current_followers, followers))
             
             if not new_followers:
@@ -65,23 +64,31 @@ class Bot (WebScraping):
             # Count messages
             print (f"\nMessages per day: {MESSAGES_PER_DAY}")
             
-            current_messages = self.db.get_messages ()
-            messages_sent = list(filter(lambda message: message[3] == 1, current_messages))
-            messages_sent_today = list(filter(lambda message: message[1].date() == datetime.now().date(), messages_sent))
-            print (f"Messages sent today: {len(messages_sent_today)}")
+            messages_sent_today = self.db.count_messages_sent_today ()
+            print (f"Messages sent today: {messages_sent_today}")
             
-            messages_to_send = MESSAGES_PER_DAY - len(messages_sent_today)
-            if messages_to_send > 0:
-                print (f"Sending {messages_to_send} messages...")
-            else:
+            messages_to_send_num = MESSAGES_PER_DAY - messages_sent_today
+            if messages_to_send_num <= 0:
                 print ("No more messages to sent today")
                 quit ()            
-            
-            # Get next follower
-            
-            # TODO: send message to follower
                 
+            print (f"Sending {messages_to_send_num} messages...")
+            message_text = input ("Message: ")
             
+            # send message to follower
+            messages_to_send =self.db.get_messages_to_send ()
+            for message in messages_to_send[:messages_to_send_num]:
+                                
+                # TODO: submit message
+                print (f"Sending message to {message[0]}...")
+                print ("\tSent")
+                
+                # Update database
+                self.db.update_message (message[0], message_text, sent=1)
+                
+                # Wait
+                print (f"Waiting {WAIT_TIME} minutes...")
+                sleep (WAIT_TIME * 60)
         
         print ("Done")
         
