@@ -9,6 +9,8 @@ class Bot (WebScraping):
     
     def __init__ (self):
         
+        print ("Starting bot...")
+        
         super().__init__ ()
         
         # Connect to database
@@ -18,17 +20,21 @@ class Bot (WebScraping):
         self.pages = {
             "home": "https://www.instagram.com/",
         }
-        self.selectors = {}        
+        self.selectors = {
+            "profile_btn": '.xh8yej3.x1iyjqo2 > div:last-child [role="link"]',
+            "login_form": '#loginForm',
+        }        
 
         # Workflow    
         self.__login_cookies__ ()
         
         print ()
         
-        
     def __login_cookies__ (self):
         """ Load cookies from local file, to avoid manual login
         """
+        
+        print ("Loading cookies...")
         
         # Load instagram home page
         self.set_page (self.pages["home"])
@@ -36,7 +42,7 @@ class Bot (WebScraping):
         # Validate cookies file
         cookies_path = os.path.join (CURRENT_FOLDER, "cookies.json")
         if not os.path.exists (cookies_path):
-            print ("Cookies file not found")
+            print ("Error: Cookies file not found")
             quit ()        
         
         # Get cookies
@@ -44,7 +50,19 @@ class Bot (WebScraping):
             cookies = json.load (file)
         self.set_cookies (cookies)
         
+        # Reload home
+        self.set_page (self.pages["home"])
+        
+        # Validate login
+        login_form = self.get_elems (self.selectors["login_form"])
+        if login_form:
+            print ("Error: Cookies expired")
+            quit ()
+        
+ 
+        
+        
+        
 if __name__ == "__main__":
     # Test bot
     Bot ()
-    print ()
