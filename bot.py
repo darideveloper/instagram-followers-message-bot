@@ -37,6 +37,9 @@ class Bot (WebScraping):
             "message_textarea": '[role="textbox"]',
             "message_submit": '[tabindex="-1"] [role="button"]:nth-child(3)',
         }        
+        
+    def auto_run (self):
+        """ Run bot automatically """
 
         # Login and get followrs
         self.__login_cookies__ ()
@@ -47,61 +50,9 @@ class Bot (WebScraping):
         
         # Save all followers in database, first time
         if self.db.new_database:
-            
-            print ("Saving initial followers in database...")
-            
-            for follower in followers:
-                self.db.add_message (follower, sent=2)
-                
+            self.__save_initial_followers__ (followers)
         else:
-            # Detect new followers and save in database
-            current_followers = self.db.get_current_followers ()
-            new_followers = list(filter(lambda follower: follower not in current_followers, followers))
-            
-            # Detect and save new followers
-            if new_followers:
-                print (f"{len(new_followers)} new followers detected:")
-                for follower in new_followers:
-                    print (follower)
-                    self.db.add_message (follower)
-            else:                    
-                print ("No new followers detected")
-                
-            # Count messages
-            print (f"\nMessages per day: {MESSAGES_PER_DAY}")
-            
-            messages_sent_today = self.db.count_messages_sent_today ()
-            print (f"Messages sent today: {messages_sent_today}")            
-            
-            messages_to_send_num = MESSAGES_PER_DAY - messages_sent_today
-            if messages_to_send_num <= 0:
-                print ("No more messages to sent today")
-                quit ()            
-                
-            print (f"Sending {messages_to_send_num} messages...")
-            message_text = input ("Message: ")
-            
-            # send message to follower
-            messages_to_send =self.db.get_messages_to_send ()
-            for message in messages_to_send[:messages_to_send_num]:
-                
-                user = message[0]
-                                
-                # submit message
-                print (f"Sending message to {user}...")
-                message_sent = self.__send_message__ (user, message_text)
-                
-                # Show and update database
-                if message_sent:
-                    self.db.update_message (user, message_text, sent=1)
-                    print ("\tMessage sent")
-                else:
-                    self.db.update_message (user, f" {self.error}", sent=3)
-                    print (f"\t{self.error}")
-                
-                # Wait
-                print (f"Waiting {WAIT_TIME} minutes...")
-                sleep (WAIT_TIME * 60)
+           self.__send_messages__ (followers)
         
         print ("Done")
         
@@ -181,7 +132,7 @@ class Bot (WebScraping):
         return links_found
     
     def __send_message__ (self, user:str, message:str) -> bool:
-        """ Send message to user, and update "error" if something goes wrong
+        """ Send single message to a target user, and update "error" if something goes wrong
 
         Args:
             user (str): instagram profile link
@@ -223,8 +174,78 @@ class Bot (WebScraping):
         
         # Return default status
         return True
+    
+    def __send_messages__ (self, followers:list):
+        """ Send messages to followers, validating the maximum number of messages per day
+
+        Args:
+            followers (list): followers profiles
+        """
+        
+        # Detect new followers and save in database
+        current_followers = self.db.get_current_followers ()
+        new_followers = list(filter(lambda follower: follower not in current_followers, followers))
+        
+        # Detect and save new followers
+        if new_followers:
+            print (f"{len(new_followers)} new followers detected:")
+            for follower in new_followers:
+                print (follower)
+                self.db.add_message (follower)
+        else:                    
+            print ("No new followers detected")
+            
+        # Count messages
+        print (f"\nMessages per day: {MESSAGES_PER_DAY}")
+        
+        messages_sent_today = self.db.count_messages_sent_today ()
+        print (f"Messages sent today: {messages_sent_today}")            
+        
+        messages_to_send_num = MESSAGES_PER_DAY - messages_sent_today
+        if messages_to_send_num <= 0:
+            print ("No more messages to sent today")
+            quit ()            
+            
+        print (f"Sending {messages_to_send_num} messages...")
+        message_text = input ("Message: ")
+        
+        # send message to follower
+        messages_to_send =self.db.get_messages_to_send ()
+        for message in messages_to_send[:messages_to_send_num]:
+            
+            user = message[0]
+                            
+            # submit message
+            print (f"Sending message to {user}...")
+            message_sent = self.__send_message__ (user, message_text)
+            
+            # Show and update database
+            if message_sent:
+                self.db.update_message (user, message_text, sent=1)
+                print ("\tMessage sent")
+            else:
+                self.db.update_message (user, f" {self.error}", sent=3)
+                print (f"\t{self.error}")
+            
+            # Wait
+            print (f"Waiting {WAIT_TIME} minutes...")
+            sleep (WAIT_TIME * 60)
+    
+    
+    def __save_initial_followers__ (self, followers:list):
+        """ Save initial followers in database with sent=2
+
+        Args:
+            followers (list): profiles of followers
+        """
+        
+        print ("Saving initial followers in database...")
+        
+        for follower in followers:
+            self.db.add_message (follower, sent=2)
             
                 
 if __name__ == "__main__":
     # Test bot
-    Bot ()
+    bot = Bot ()
+    bot.auto_run ()
