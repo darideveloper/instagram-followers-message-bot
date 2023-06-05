@@ -3,8 +3,14 @@ import json
 from time import sleep
 from database_bot import DataBaseBot
 from scraping.web_scraping import WebScraping
+from dotenv import load_dotenv
+from datetime import datetime
 
+# Constants and env variables
+load_dotenv ()
 CURRENT_FOLDER = os.path.dirname(os.path.abspath(__file__))
+MESSAGES_PER_DAY = int(os.getenv ("MESSAGES_PER_DAY"))
+
 
 class Bot (WebScraping):
     
@@ -33,7 +39,51 @@ class Bot (WebScraping):
         self.__login_cookies__ ()
         followers = self.__get_followers__ ()
         
-        print ()
+        # Save all followers in database, first time
+        if self.db.new_database:
+            
+            print ("Saving initial followers in database...")
+            
+            for follower in followers:
+                self.db.add_message (follower, sent=2)
+                
+        else:
+            # Detect new followers and save in database
+            current_messages = self.db.get_messages ()
+            current_followers = list(map(lambda message: message[0], current_messages))
+            new_followers = list(filter(lambda follower: follower not in current_followers, followers))
+            
+            if not new_followers:
+                print ("No new followers detected")
+                quit ()
+            
+            print (f"{len(new_followers)} new followers detected:")
+            for follower in new_followers:
+                print (follower)
+                self.db.add_message (follower)
+                
+            # Count messages
+            print (f"\nMessages per day: {MESSAGES_PER_DAY}")
+            
+            current_messages = self.db.get_messages ()
+            messages_sent = list(filter(lambda message: message[3] == 1, current_messages))
+            messages_sent_today = list(filter(lambda message: message[1].date() == datetime.now().date(), messages_sent))
+            print (f"Messages sent today: {len(messages_sent_today)}")
+            
+            messages_to_send = MESSAGES_PER_DAY - len(messages_sent_today)
+            if messages_to_send > 0:
+                print (f"Sending {messages_to_send} messages...")
+            else:
+                print ("No more messages to sent today")
+                quit ()            
+            
+            # Get next follower
+            
+            # TODO: send message to follower
+                
+            
+        
+        print ("Done")
         
     def __login_cookies__ (self):
         """ Load cookies from local file, to avoid manual login
@@ -57,6 +107,8 @@ class Bot (WebScraping):
         
         # Reload home
         self.set_page (self.pages["home"])
+        sleep (5)
+        self.refresh_selenium ()
         
         # Validate login
         login_form = self.get_elems (self.selectors["login_form"])
@@ -107,14 +159,6 @@ class Bot (WebScraping):
                 self.driver.execute_script(f"arguments[0].scrollBy (0, {2000});", scroll_elem[0])
         
         return links_found
-        
-        
-        
-        
-        
- 
-        
-        
         
 if __name__ == "__main__":
     # Test bot

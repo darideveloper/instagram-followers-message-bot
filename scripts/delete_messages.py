@@ -10,6 +10,6 @@ sys.path.append(PARENT_FOLDER)
 # Import database
 from database_bot import DataBaseBot
 
-DataBaseBot ("database.db").delete_messages ()
+DataBaseBot ("database_bot.db").delete_messages ()
 
 print ("done")

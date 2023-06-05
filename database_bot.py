@@ -10,7 +10,7 @@ class DataBaseBot (DataBase):
         """ Get all messages from database
 
         Returns:
-            _type_: _description_
+            list: messages data (user, date, message, sent)
         """
         
         # Get roes from database
@@ -18,7 +18,7 @@ class DataBaseBot (DataBase):
         
         # Format dates from iso
         if messages:
-            messages = list(map(lambda row: (row[0], self.get_date_from_iso(row[1]), row[2]), messages))
+            messages = list(map(lambda row: (row[0], self.get_date_from_iso(row[1]), row[2], row[3]), messages))
                 
             return messages
         else:
@@ -29,7 +29,7 @@ class DataBaseBot (DataBase):
         """
         self.run_sql ("DELETE FROM messages")
         
-    def add_message (self, user:str, message:str, date:datetime=None):
+    def add_message (self, user:str, message:str="", date:datetime=None, sent:int=0):
         """ Add message to database
 
         Args:
@@ -45,4 +45,4 @@ class DataBaseBot (DataBase):
             date_iso = self.get_now_iso ()
             
         
-        self.run_sql (f"INSERT INTO messages (user, date, message) VALUES ('{user}', '{date_iso}', '{message}')")
+        self.run_sql (f"INSERT INTO messages (user, date, message, sent) VALUES ('{user}', '{date_iso}', '{message}', {sent})")

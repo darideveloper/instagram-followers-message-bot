@@ -10,6 +10,6 @@ sys.path.append(PARENT_FOLDER)
 # Import database
 from database_bot import DataBaseBot
 
-DataBaseBot ("database.db").add_message ("sample user", "sample message")
+DataBaseBot ("database_bot.db").add_message ("sample user", "sample message")
 
 print ("done")
