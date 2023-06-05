@@ -4,7 +4,7 @@ from datetime import datetime
 class DataBaseBot (DataBase):
     
     def __create_database__(self):
-        self.run_sql ("CREATE TABLE IF NOT EXISTS messages (user char, date char, message char DEFAULT '')")
+        self.run_sql ("CREATE TABLE IF NOT EXISTS messages (user char, date char, message char DEFAULT '', sent int DEFAULT 0, PRIMARY KEY (user, date))")
     
     def get_messages (self):
         """ Get all messages from database
