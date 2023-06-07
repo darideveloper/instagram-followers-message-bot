@@ -4,7 +4,8 @@ from time import sleep
 from database_bot import DataBaseBot
 from scraping.web_scraping import WebScraping
 from dotenv import load_dotenv
-from datetime import datetime
+from selenium.webdriver.common.keys import Keys
+
 
 # Constants and env variables
 load_dotenv ()
@@ -131,12 +132,12 @@ class Bot (WebScraping):
         
         return links_found
     
-    def __send_message__ (self, user:str, message:str) -> bool:
+    def __send_message__ (self, user:str, message:list) -> bool:
         """ Send single message to a target user, and update "error" if something goes wrong
 
         Args:
             user (str): instagram profile link
-            message (str): message to send
+            message (list): message to send (in lines)
             
         Returns:
             bool: True if message was sent, False otherwise
@@ -164,7 +165,7 @@ class Bot (WebScraping):
         
         # Write and submit message
         try:
-            self.send_data (self.selectors["message_textarea"], message)
+            self.write_lines (self.selectors["message_textarea"], message)
             self.refresh_selenium ()
             self.click_js (self.selectors["message_submit"])
             sleep (3)
@@ -207,7 +208,13 @@ class Bot (WebScraping):
             quit ()            
             
         print (f"Sending {messages_to_send_num} messages...")
-        message_text = input ("Message: ")
+        print ("\tMessage (type 'quit' to end):")
+        message_text = []
+        while True:
+            user_input = input ()
+            if user_input.lower().strip() == "quit":
+                break
+            message_text.append (user_input)
         
         # send message to follower
         messages_to_send =self.db.get_messages_to_send ()

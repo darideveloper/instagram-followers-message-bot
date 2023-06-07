@@ -692,3 +692,17 @@ class WebScraping ():
                 break
             else:
                 time.sleep(0.5)
+
+    def write_lines (self, selector:str, lines:list):
+        """ Wriute multiline text in input element
+
+        Args:
+            selector (str): css selector
+            lines (list): list of lines to write
+        """
+        
+        elem = self.get_elem (selector)
+        for line in lines:
+            elem.send_keys (line)
+            elem.send_keys (Keys.SHIFT + Keys.ENTER)
+        

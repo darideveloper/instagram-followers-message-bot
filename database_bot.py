@@ -93,6 +93,9 @@ class DataBaseBot (DataBase):
             date (datetime, optional): date where the message was sent, or date of new follower detection. Defaults to None.
         """
         
+        if type(message) == list:
+            message = "\n".join(message)
+        
         # Convert date to iso or get today date
         if date:
             date_iso = self.get_date_iso (date)
