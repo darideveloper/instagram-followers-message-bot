@@ -17,7 +17,7 @@ class Bot (WebScraping):
     
     def __init__ (self):
         
-        print ("Starting bot...")
+        print ("\n--------------------------\nStarting bot...")
         
         # Start chrome
         super().__init__ ()
@@ -205,7 +205,7 @@ class Bot (WebScraping):
         messages_to_send_num = MESSAGES_PER_DAY - messages_sent_today
         if messages_to_send_num <= 0:
             print ("No more messages to sent today")
-            quit ()            
+            return None        
             
         print (f"Sending {messages_to_send_num} messages...")
         print ("\tMessage (type 'quit' to end):")
